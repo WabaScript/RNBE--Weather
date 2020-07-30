@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import * as Location from 'expo-location';
+import * as Permissions from 'expo-permissions';
 
 export default function Details() {
     const zipcode = 10018
