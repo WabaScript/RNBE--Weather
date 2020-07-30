@@ -1,39 +1,32 @@
 import React, { useEffect } from 'react';
 import * as Location from 'expo-location';
 import * as Permissions from 'expo-permissions';
+import { weatherAPI } from '../util/weatherAPI';
 
 export default function Details() {
-
     useEffect(() => {
         const zipcode = 10018
         navigator.geolocation.getCurrentPosition(position => {
             console.log("position", position);
+            getCurrentWeather({ coords: position.coords });
+            getForecastWeather({ coords: position.coords });
         })
-        getCurrentWeather({ zipcode });
-        getForecastWeather();
     }, []);
 
     const getCurrentWeather = ({ zipcode, coords }) => {
-        let suffix = "";
-        if (zipcode) {
-            suffix = `zip=${zipcode}`;
-        }
-        fetch(`https://api.openweathermap.org/data/2.5/weather?appid=xxxxxx&units=imperial&${suffix}`)
-            .then(res => res.json())
+        return weatherAPI('/weather', { zipcode, coords })
             .then(res => console.log('current response', res))
             .catch(err => {
                 console.log('current error', err)
             })
     }
 
-    const getForecastWeather = () => {
-        fetch(`https://api.openweathermap.org/data/2.5/forecast?appid=xxxxxx&units=imperial`)
-            .then(res => res.json())
+    const getForecastWeather = ({ zipcode, coords }) => {
+        return weatherAPI('/forecast', { zipcode, coords })
             .then(res => console.log('forecast response', res))
             .catch(err => {
-                console.log('current error', err)
+                console.log('forecast error', err)
             })
-
     }
 
     return (
