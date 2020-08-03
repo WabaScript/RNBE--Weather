@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import * as Location from 'expo-location';
-import * as Permissions from 'expo-permissions';
 import { weatherAPI } from '../util/weatherAPI';
 
 export default function Details() {
