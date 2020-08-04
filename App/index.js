@@ -1,4 +1,5 @@
 import React from 'react';
+import { TouchableOpacity, Image, StatusBar } from 'react-native';
 import Details from './screens/Details';
 import Search from './screens/Search';
 import { NavigationContainer } from '@react-navigation/native';
@@ -6,22 +7,67 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 const Stack = createStackNavigator();
 
+const HeaderRightButton = ({ onPress, style, icon }) => (
+    <TouchableOpacity onPress={onPress}>
+        <Image
+            source={icon}
+            resizeMode="contain"
+            style={[
+                {
+                    marginRight: 10,
+                    width: 20,
+                    height: 20,
+                    tintColor: 'white'
+                },
+                style
+            ]}
+        />
+    </TouchableOpacity>
+)
+
 const MainStack = () => (
-    <Stack.Navigator>
+    <Stack.Navigator
+        mode="modal"
+    >
         <Stack.Screen
             name="Details"
             component={Details}
-            options={{ title: 'xxxx' }}
+            options={({ navigation }) => ({
+                headerTitle: 'Details',
+                headerRight: () => (
+                    <React.Fragment>
+                        <StatusBar barStyle="light-content" />
+                        <HeaderRightButton icon={require('./assets/search.png')} onPress={() => navigation.navigate('Search')} />
+                    </React.Fragment>
+                ),
+                headerStyle: {
+                    backgroundColor: '#3145b7',
+                    borderBottomColor: '#3145b7',
+                },
+                headerTintColor: 'white'
+            })
+            }
         />
         <Stack.Screen
             name="Search"
             component={Search}
-            options={({ route }) => ({
-                headerTitle: route.params?.title ?? 'title',
-                headerTintColor: 'white',
+            mode="modal"
+            options={({ route, navigation }) => ({
+                headerTitle: 'Search',
+                headerRight: () => (
+                    <React.Fragment>
+                        <StatusBar barStyle="dark-content" />
+                        <HeaderRightButton
+                            icon={require('./assets/close.png')}
+                            onPress={() => navigation.pop()}
+                            style={{ tintColor: '#000' }}
+                        />
+                    </React.Fragment>
+                ),
+                headerLeft: null,
+                headerTintColor: 'blue',
                 headerStyle: {
                     backgroundColor: route.params?.color,
-                    shadowColor: 'transparent'
                 }
             })
             }
