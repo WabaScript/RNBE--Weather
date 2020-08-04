@@ -32,8 +32,8 @@ const MainStack = () => (
         <Stack.Screen
             name="Details"
             component={Details}
-            options={({ navigation }) => ({
-                headerTitle: 'Details',
+            options={({ navigation, route }) => ({
+                headerTitle: route.params?.title ?? '...',
                 headerRight: () => (
                     <React.Fragment>
                         <StatusBar barStyle="light-content" />
@@ -42,7 +42,7 @@ const MainStack = () => (
                 ),
                 headerStyle: {
                     backgroundColor: '#3145b7',
-                    borderBottomColor: '#3145b7',
+                    shadowColor: 'transparent'
                 },
                 headerTintColor: 'white'
             })
