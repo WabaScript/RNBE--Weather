@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { weatherAPI } from '../util/weatherAPI';
 import { Container } from '../components/Container';
@@ -38,83 +38,107 @@ const groupForecastByDay = list => {
     return formattedList;
 }
 
-export default function Details({ navigation }) {
+export default function Details({ navigation, route }) {
     const [currentWeather, setCurrentWeather] = useState({});
     const [forecast, setForecast] = useState([]);
     const [loadingCurrentWeather, setLoadingCurrentWeather] = useState(true);
     const [loadingForecast, setLoadingForecast] = useState(true);
 
+    const handleError = () => {
+        Alert.alert('No location data found', 'Please try again!', [
+            {
+                text: "Take me back",
+                onPress: () => navigation.navigate('Search')
+            }
+        ]);
+    };
+
     useEffect(() => {
-        const zipcode = 10018
-        navigator.geolocation.getCurrentPosition(position => {
-            getCurrentWeather({ coords: position.coords });
-            getForecastWeather({ coords: position.coords });
-        })
-    }, []);
+        const zipcode = route.params?.zipcode ?? null
+        if (zipcode) {
+            getCurrentWeather({ zipcode: zipcode })
+            getForecastWeather({ zipcode: zipcode })
+        } else {
+            navigator.geolocation.getCurrentPosition(position => {
+                getCurrentWeather({ coords: position.coords });
+                getForecastWeather({ coords: position.coords });
+            })
+        }
+    }, [route.params?.zipcode]);
 
     const getCurrentWeather = ({ zipcode, coords }) => {
         return weatherAPI('/weather', { zipcode, coords })
             .then(res => {
-                navigation.setParams({ title: res.name })
-                setCurrentWeather(res)
-                setLoadingCurrentWeather(false)
+                if (Math.floor(res.cod / 100) === 4) {
+                    handleError();
+                } else {
+                    navigation.setParams({ title: res.name });
+                    setCurrentWeather(res);
+                    setLoadingCurrentWeather(false);
+                }
             })
-
             .catch(err => {
+                handleError();
                 console.log('current error', err)
             })
     }
-
+    console.log(currentWeather)
     const getForecastWeather = ({ zipcode, coords }) => {
         return weatherAPI('/forecast', { zipcode, coords })
             .then(res => {
-                setLoadingForecast(false);
-                setForecast(groupForecastByDay(res.list));
+                if (Math.floor(res.cod / 100) !== 4) {
+                    setLoadingForecast(false);
+                    setForecast(groupForecastByDay(res.list));
+                }
             })
             .catch(err => {
+                handleError();
                 console.log('forecast error', err)
             })
     }
 
-
+    console.log(route.params?.zipcode ?? "woops")
     return (
         loadingCurrentWeather || loadingForecast ?
             <Container>
                 <ActivityIndicator color="#fff" size="large" />
-            </Container> :
+            </Container>
+
+            :
 
             <Container>
                 <ScrollView>
-                    <SafeAreaView>
-                        <WeatherIcon icon={currentWeather.weather[0].icon} />
-                        <H1 style={{ paddingTop: 14 }}>{`${Math.round(currentWeather.main.temp)}°`}</H1>
-                        <BasicRow>
-                            <H2>{`Humidity: ${currentWeather.main.humidity}%`}</H2>
-                        </BasicRow>
-                        <BasicRow>
-                            <H2>{`Low: ${Math.round(currentWeather.main.temp_min)}°`}</H2>
-                            <H2>{`High: ${Math.round(currentWeather.main.temp_max)}°`}</H2>
-                        </BasicRow>
+                    {Object.keys(currentWeather) > 1 &&
+                        <SafeAreaView>
+                            <WeatherIcon icon={currentWeather.weather[0].icon} />
+                            <H1 style={{ paddingTop: 14 }}>{`${Math.round(currentWeather.main.temp)}°`}</H1>
+                            <BasicRow>
+                                <H2>{`Humidity: ${currentWeather.main.humidity}%`}</H2>
+                            </BasicRow>
+                            <BasicRow>
+                                <H2>{`Low: ${Math.round(currentWeather.main.temp_min)}°`}</H2>
+                                <H2>{`High: ${Math.round(currentWeather.main.temp_max)}°`}</H2>
+                            </BasicRow>
 
-                        <View style={{ paddingHorizontal: 10, marginTop: 20 }}>
-                            {forecast.map(day => (
-                                <BasicRow
-                                    key={day.day}
-                                    style={{ justifyContent: 'space-between' }}
-                                >
-                                    <P>{format(new Date(day.day), 'cccc')}</P>
-                                    <View style={{ flexDirection: 'row' }}>
-                                        <P style={{ fontWeight: '700', marginRight: 10 }}>
-                                            {Math.round(day.temp_max)}
-                                        </P>
-                                        <P>{Math.round(day.temp_min)}</P>
-                                    </View>
-                                </BasicRow>
-                            ))}
-                        </View>
-                    </SafeAreaView>
+                            <View style={{ paddingHorizontal: 10, marginTop: 20 }}>
+                                {forecast.map(day => (
+                                    <BasicRow
+                                        key={day.day}
+                                        style={{ justifyContent: 'space-between' }}
+                                    >
+                                        <P>{format(new Date(day.day), 'cccc')}</P>
+                                        <View style={{ flexDirection: 'row' }}>
+                                            <P style={{ fontWeight: '700', marginRight: 10 }}>
+                                                {Math.round(day.temp_max)}
+                                            </P>
+                                            <P>{Math.round(day.temp_min)}</P>
+                                        </View>
+                                    </BasicRow>
+                                ))}
+                            </View>
+                        </SafeAreaView>
+                    }
                 </ScrollView>
             </Container>
     )
-
 }
