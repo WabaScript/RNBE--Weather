@@ -1,19 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { SearchBar } from '../components/SearchBar';
 import { SearchItem } from '../components/List';
+import { getRecentSearch } from '../util/RecentSearch';
 
 export default function Search({ navigation }) {
     const [query, setQuery] = useState('');
+    const [recentSearch, setRecentSearch] = useState([]);
+
+    useEffect(() => {
+        getRecentSearch()
+            .then(list => setRecentSearch(list))
+    }, []);
 
     return (
         <FlatList
             style={{ backgroundColor: 'white' }}
-            data={[{ id: 1, name: 'ricky' }, { id: 2, name: "cool" }]}
+            data={recentSearch}
             renderItem={({ item }) => (
                 <SearchItem
                     name={item.name}
-                    onPress={() => navigation.navigate("Details")}
+                    onPress={() => navigation.navigate("Details", {
+                        lat: item.lat,
+                        lon: item.lon
+                    })}
                 />
             )}
             keyExtractor={item => item.id.toString()}

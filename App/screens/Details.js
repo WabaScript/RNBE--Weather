@@ -8,6 +8,7 @@ import { BasicRow } from '../components/List';
 import { H1, H2, P } from '../components/Text';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
+import { storeRecentSearch } from '../util/RecentSearch';
 
 const groupForecastByDay = list => {
     const data = {}
@@ -54,10 +55,15 @@ export default function Details({ navigation, route }) {
     };
 
     useEffect(() => {
-        const zipcode = route.params?.zipcode ?? null
-        if (zipcode) {
-            getCurrentWeather({ zipcode: zipcode })
-            getForecastWeather({ zipcode: zipcode })
+        const lat = route.params?.lat
+        const lon = route.params?.lon
+        const zip = route.params?.zipcode
+        if (lat && lon) {
+            getCurrentWeather({ coords: { latitude: lat, longitude: lon } })
+            getForecastWeather({ coords: { latitude: lat, longitude: lon } })
+        } else if (zip) {
+            getCurrentWeather({ zipcode: zip })
+            getForecastWeather({ zipcode: zip })
         } else {
             navigator.geolocation.getCurrentPosition(position => {
                 getCurrentWeather({ coords: position.coords });
@@ -75,6 +81,12 @@ export default function Details({ navigation, route }) {
                     navigation.setParams({ title: res.name });
                     setCurrentWeather(res);
                     setLoadingCurrentWeather(false);
+                    storeRecentSearch({
+                        id: res.id,
+                        name: res.name,
+                        lat: res.coord.lat,
+                        lon: res.coord.lon
+                    });
                 }
             })
             .catch(err => {
@@ -82,13 +94,13 @@ export default function Details({ navigation, route }) {
                 console.log('current error', err)
             })
     }
-    console.log(currentWeather)
+    // console.log(currentWeather)
     const getForecastWeather = ({ zipcode, coords }) => {
         return weatherAPI('/forecast', { zipcode, coords })
             .then(res => {
                 if (Math.floor(res.cod / 100) !== 4) {
-                    setLoadingForecast(false);
                     setForecast(groupForecastByDay(res.list));
+                    setLoadingForecast(false);
                 }
             })
             .catch(err => {
@@ -97,7 +109,7 @@ export default function Details({ navigation, route }) {
             })
     }
 
-    console.log(route.params?.zipcode ?? "woops")
+    // console.log(route.params?.zipcode ?? "woops")
     return (
         loadingCurrentWeather || loadingForecast ?
             <Container>
@@ -108,7 +120,7 @@ export default function Details({ navigation, route }) {
 
             <Container>
                 <ScrollView>
-                    {Object.keys(currentWeather) > 1 &&
+                    {currentWeather &&
                         <SafeAreaView>
                             <WeatherIcon icon={currentWeather.weather[0].icon} />
                             <H1 style={{ paddingTop: 14 }}>{`${Math.round(currentWeather.main.temp)}°`}</H1>
