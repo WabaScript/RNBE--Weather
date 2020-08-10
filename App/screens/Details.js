@@ -57,11 +57,21 @@ export default function Details({ navigation, route }) {
     useEffect(() => {
         const lat = route.params?.lat
         const lon = route.params?.lon
-        const zip = route.params?.zipcode
         if (lat && lon) {
             getCurrentWeather({ coords: { latitude: lat, longitude: lon } })
             getForecastWeather({ coords: { latitude: lat, longitude: lon } })
-        } else if (zip) {
+        } else {
+            navigator.geolocation.getCurrentPosition(position => {
+                getCurrentWeather({ coords: position.coords });
+                getForecastWeather({ coords: position.coords });
+            })
+        }
+    }, [route.params?.lat, route.params?.lon]);
+
+
+    useEffect(() => {
+        const zip = route.params?.zipcode
+        if (zip) {
             getCurrentWeather({ zipcode: zip })
             getForecastWeather({ zipcode: zip })
         } else {
